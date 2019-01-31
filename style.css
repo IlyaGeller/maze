@@ -1,0 +1,37 @@
+body{
+    margin: 0;
+    width: 600px;
+    height: 600px;
+    border: 1px solid black;
+}
+
+.current{
+    background-color: red
+}
+
+.cell{
+    position: relative;
+    /* border: 1px solid black; */
+    height: 28px;
+    width: 28px;
+    display: inline-grid;
+}
+.cell.top{
+    border-top: 1px solid black;
+}
+.cell.left{
+    border-left: 1px solid black;
+}
+.cell.right{
+    border-right: 1px solid black;
+}
+.cell.bottom{
+    border-bottom: 1px solid black;
+}
+.cell:hover{
+    background-color: #e0e0e0
+}
+
+.cell.clicked{
+    background-color: green;
+}
