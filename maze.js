@@ -22,9 +22,15 @@ Array.prototype.randomMinMark = function () {
     }
 }
 
+var isStartSet = false;
+var isEndSet = false;
+var startCell = null;
+var endCell = null;
 function Cell(y,x){
     this.x=x;
     this.y=y;
+    this.isStart = false;
+    this.isEnd = false;
     this.isVisited = false;
     this.markCount = 0;
     this.deadEnd = false;
@@ -39,7 +45,32 @@ function Cell(y,x){
     this.div.style.top = y*30 + 'px';
     this.div.style.left = x*30 + 'px';
     this.div.addEventListener("click",(el)=>{
-        el.srcElement.classList.toggle("clicked");
+        if(!(isStartSet && isEndSet && !(this.isStart || this.isEnd))){
+            if(!isStartSet){
+                isStartSet = true;
+                this.isStart = true;
+                el.srcElement.classList.toggle("startCell");
+                startCell = this;
+            }else{
+                if(this.isStart){
+                    isStartSet = false;
+                    this.isStart = false;
+                    el.srcElement.classList.toggle("startCell");
+                    startCell = null; 
+                }else if(!isEndSet){
+                    isEndSet = true;
+                    this.isEnd = true;
+                    el.srcElement.classList.toggle("endCell");
+                    endCell = this;
+                }else{
+                    isEndSet = false;
+                    this.isEnd = false;
+                    el.srcElement.classList.toggle("endCell");
+                    endCell = null;
+                }
+            }
+        }
+        // el.srcElement.classList.toggle("clicked");
     });
     document.getElementById("maze").appendChild(this.div);
 
@@ -250,8 +281,12 @@ genButton.addEventListener('click',()=>{
 });
 var solButton = document.getElementById('Solve');
 solButton.addEventListener('click',()=>{
-    solButton.style.display = 'none';
-    solveMaze();
+    if(!isStartSet || !isEndSet){
+        console.log('Error: Both start and end cells need to be set!')
+    }else{
+        solButton.style.display = 'none';
+        solveMaze();
+    }
 });
 
 function isDeadEnd(cell){
@@ -290,11 +325,9 @@ function getPossiblePaths(cell,previous){
 }
 
 function solveMaze(){
-    var initial = cells[0][0];
-    var target = cells[19][19];
+    var initial = startCell;
+    var target = endCell;
     var current = initial;
-    current.div.classList.add('startCell');
-    target.div.classList.add('endCell');
     var previous = null;
     var stack = [];
     var trail = [];
