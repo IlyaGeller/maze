@@ -3,30 +3,34 @@ body{
     width: 600px;
     height: 600px;
     border: 1px solid black;
+    /* background-color:lightgoldenrodyellow; */
 }
 
+html{
+    /* background-color: #d0d0d0; */
+}
 .current{
-    background-color: red
+    background-color: rgb(54, 201, 41)
 }
 
 .cell{
-    position: relative;
+    position: absolute;
     /* border: 1px solid black; */
     height: 28px;
     width: 28px;
     display: inline-grid;
 }
 .cell.top{
-    border-top: 1px solid black;
+    border-top: 2px solid black;
 }
 .cell.left{
-    border-left: 1px solid black;
+    border-left: 2px solid black;
 }
 .cell.right{
-    border-right: 1px solid black;
+    border-right: 2px solid black;
 }
 .cell.bottom{
-    border-bottom: 1px solid black;
+    border-bottom: 2px solid black;
 }
 .cell:hover{
     background-color: #e0e0e0
@@ -34,4 +38,53 @@ body{
 
 .cell.clicked{
     background-color: green;
+}
+
+button{
+    display:inline-block;
+    padding:0.3em 1.2em;
+    margin:0 0.3em 0.3em 0;
+    border-radius:2em;
+    box-sizing: border-box;
+    text-decoration:none;
+    font-family:'Roboto',sans-serif;
+    font-weight:300;
+    color:#FFFFFF;
+    background-color:#4eb5f1;
+    text-align:center;
+    transition: all 0.2s;
+}
+button:hover{
+    background-color:#4095c6;
+}
+#Generate{
+    position: absolute;
+    top:605px;
+}
+#Solve{
+    position: absolute;
+    top:650px;
+}
+
+.startCell{
+    background-color: green;
+}
+.endCell{
+    background-color: red;
+}
+.trail{
+    background-color: lightblue;
+    /* border: 2px solid green; */
+}
+.dead{
+    background-color: black;
+}
+
+#applause{
+    position: absolute;
+    top:610px;
+    left:200px;
+}
+#applause.none{
+    display: none;
 }

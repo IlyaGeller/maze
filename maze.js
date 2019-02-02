@@ -1,12 +1,33 @@
 // var c = document.getElementById("myCanvas");
 // var ctx = c.getContext("2d");
 // var len = c.width/20;
+Array.prototype.random = function () {
+    return this[Math.floor((Math.random()*this.length))];
+}
 
+Array.prototype.randomMinMark = function () {
+    var zeros = [];
+    var nonzeros = [];
+    this.forEach(element => {
+        if(element.markCount === 0){
+            zeros.push(element);
+        }else{
+            nonzeros.push(element);
+        }
+    });
+    if(zeros.length > 0){
+        return zeros[Math.floor((Math.random()*zeros.length))];
+    }else{
+        return nonzeros[Math.floor((Math.random()*nonzeros.length))];
+    }
+}
 
-function Cell(x,y){
+function Cell(y,x){
     this.x=x;
     this.y=y;
     this.isVisited = false;
+    this.markCount = 0;
+    this.deadEnd = false;
     this.walls = {
         top:true,
         left:true,
@@ -15,11 +36,12 @@ function Cell(x,y){
     }
     this.div = document.createElement("div");
     this.div.classList.add("cell","top","left","right","bottom");
-    this.div.style.top = x + 'px';
+    this.div.style.top = y*30 + 'px';
+    this.div.style.left = x*30 + 'px';
     this.div.addEventListener("click",(el)=>{
         el.srcElement.classList.toggle("clicked");
     });
-    document.getElementById("body").appendChild(this.div);
+    document.getElementById("maze").appendChild(this.div);
 
     this.removeWall = function(wall){
        if(wall === 'top') {
@@ -59,17 +81,6 @@ function Cell(x,y){
     }
 }
 
-function generateGrid(){
-    var grid = [];
-    for(i=0;i<c.width;i+=len){
-        for(j=0;j<c.height;j+=len){
-            var newCell = new Cell(i,j);
-            grid.push(newCell);
-        }
-    }
-    return grid;
-}
-
 var cells = [];
 for(i=0;i<20;i++){
     cells[i] = [];
@@ -81,33 +92,246 @@ for(j=0;j<20;j++){
     }
 }
 
-// var anim = setInterval(frame,10);
-// var indX = 0;
-// var indY = 0;
-// function frame(){
-//     if(indX >= 20 || indY >= 20)
-//         clearInterval(anim);
-//     else{
-//         cells[indY][indX].div.classList.toggle("clicked");
-//         if(indX > 0)
-//             cells[indY][indX-1].div.classList.toggle("clicked");
-//         else if(indY > 0)
-//             cells[indY-1][19].div.classList.toggle("clicked");
-//     }
-//     indX++;
-//     if(indX === 20){
-//         indX = 0;
-//         indY++;
-//     }
-// };
 
-function removeBorders(currY,currX,chosenY,chosenX){
-    if(currX == chosenX && currY == chosenY - 1){
-        cells[currY][currX].removeWall('bottom');
-        cells[chosenY][chosenX].removeWall('top');
+function removeBorders(current,chosen){
+    if(current.x == chosen.x && current.y == chosen.y - 1){
+        current.removeWall('bottom');
+        chosen.removeWall('top');
     }
-    if(currX == chosenX -1 && currY == chosenY){
-        cells[currY][currX].removeWall('right');
-        cells[chosenY][chosenX].removeWall('left');
+    if(current.x == chosen.x -1 && current.y == chosen.y){
+        current.removeWall('right');
+        chosen.removeWall('left');
     }
+    if(current.x == chosen.x && current.y == chosen.y + 1){
+        current.removeWall('top');
+        chosen.removeWall('bottom');
+    }
+    if(current.x == chosen.x + 1 && current.y == chosen.y){
+        current.removeWall('left');
+        chosen.removeWall('right');
+    }
+}
+
+
+function isEdgeCell(cell){
+    return (cell.x === 0 || cell.x === 19 || cell.y === 0 || cell.y === 19);
+}
+
+function checkUnvisitedNeighbours(neigbours){
+    var unvisited = [];
+    neigbours.forEach(element => {
+        if(!element.isVisited){
+            unvisited.push(element);
+        }
+    });
+    return unvisited;
+}
+
+function getEdgeNeighbours(cell){
+    if(!cell) return null;
+    var neigbours = [];
+    if(cell.x === 0 && cell.y ===0){
+        return checkUnvisitedNeighbours([cells[cell.y+1][cell.x],cells[cell.y][cell.x+1]]);
+    }else if(cell.x === 0 && cell.y === 19){
+        return checkUnvisitedNeighbours([cells[cell.y-1][cell.x],cells[cell.y][cell.x+1]]);
+    }else if(cell.x === 19 && cell.y === 0){
+        return checkUnvisitedNeighbours([cells[cell.y+1][cell.x],cells[cell.y][cell.x-1]]);
+    }else if(cell.x === 19 && cell.y === 19){
+        return checkUnvisitedNeighbours([cells[cell.y-1][cell.x],cells[cell.y][cell.x-1]]);
+    }else if(cell.x === 0){
+        return checkUnvisitedNeighbours([cells[cell.y-1][cell.x],cells[cell.y][cell.x+1],cells[cell.y+1][cell.x]]);
+    }
+    else if(cell.y === 0){
+        return checkUnvisitedNeighbours([cells[cell.y][cell.x-1],cells[cell.y][cell.x+1],cells[cell.y+1][cell.x]]);
+    }
+    else if(cell.x === 19){
+        return checkUnvisitedNeighbours([cells[cell.y-1][cell.x],cells[cell.y][cell.x-1],cells[cell.y+1][cell.x]]);
+    }else if(cell.y === 19){
+        return checkUnvisitedNeighbours([cells[cell.y][cell.x-1],cells[cell.y][cell.x+1],cells[cell.y-1][cell.x]]);
+    }
+    return neigbours;
+}
+
+function getUnvisitedNeighbours(cell){
+    var neigbours = [];
+    if(!isEdgeCell(cell)){
+        var top = cells[cell.y-1][cell.x];
+        if(top){
+            if(!top.isVisited){
+                neigbours.push(top);
+            }
+        }
+        var left = cells[cell.y][cell.x-1];
+        if(left){
+            if(!left.isVisited){
+                neigbours.push(left);
+            }
+        }
+        var right = cells[cell.y][cell.x+1];
+        if(right){
+            if(!right.isVisited){
+                neigbours.push(right);
+            }
+        }
+        var bottom = cells[cell.y+1][cell.x];
+        if(bottom){
+            if(!bottom.isVisited){
+                neigbours.push(bottom);
+            }
+        }
+    }else{
+        var unvisited = getEdgeNeighbours(cell);
+        unvisited.forEach(element => {
+            neigbours.push(element);
+        });
+    }
+    return neigbours;
+}
+function hasUnvisitedNeighbours(cell){
+    var unvisited = getUnvisitedNeighbours(cell);
+    return (unvisited.length > 0)?true:false;
+}
+
+function areThereUnvisited(){
+    for(i=0;i<20;i++){
+        for(j=0;j<20;j++){
+            if(!cells[i][j].isVisited) return true;
+        }
+    }
+    return false;
+}
+function visitedCount(){
+    var count = 0;
+    for(i=0;i<20;i++){
+        for(j=0;j<20;j++){
+            if(cells[i][j].isVisited) count++;
+        }
+    }
+    return count;
+}
+
+function generateMaze(){
+    var initial = cells[0][0];
+    var current = initial;
+    current.div.classList.add('current');
+    var stack = [];
+    current.isVisited = true;
+    
+    var interval = setInterval(() => {
+        if(areThereUnvisited()){
+            if(hasUnvisitedNeighbours(current)){
+                var chosen = getUnvisitedNeighbours(current).random();
+                stack.push(current);
+                removeBorders(current,chosen);
+                current.div.classList.remove('current');
+                current = chosen;
+                current.div.classList.add('current');
+                current.isVisited = true;
+            }else{
+                if(stack.length > 0){
+                    current.div.classList.remove('current');
+                    current = stack.pop();
+                    current.div.classList.add('current');
+                }
+            }
+        }else{
+            current.div.classList.remove('current');
+            clearInterval(interval);
+            console.log('done');
+        }
+    }, 10);
+}
+
+
+var genButton = document.getElementById('Generate');
+genButton.addEventListener('click',()=>{
+    genButton.style.display = 'none';
+    generateMaze();
+});
+var solButton = document.getElementById('Solve');
+solButton.addEventListener('click',()=>{
+    solButton.style.display = 'none';
+    solveMaze();
+});
+
+function isDeadEnd(cell){
+    return (cell.markCount >= 2 || cell.deadEnd)?true:false;
+}
+
+function getPossiblePaths(cell,previous){
+    var paths = [];
+    if(!cell.walls.top){
+        var top = cells[cell.y-1][cell.x];
+        if((top != previous) && !isDeadEnd(top)){
+            paths.push(top);
+        }
+    }
+    
+    if(!cell.walls.left){
+        var left = cells[cell.y][cell.x-1];
+        if((left != previous) && !isDeadEnd(left)){
+            paths.push(left);
+        }
+    }
+    
+    if(!cell.walls.right){
+        var right = cells[cell.y][cell.x+1]
+        if((right != previous) && !isDeadEnd(right)){
+            paths.push(right);
+        }
+    }
+    if(!cell.walls.bottom){
+        var bottom = cells[cell.y+1][cell.x];
+        if((bottom != previous) && !isDeadEnd(bottom)){
+            paths.push(bottom);
+        }
+    }
+    return paths;
+}
+
+function solveMaze(){
+    var initial = cells[0][0];
+    var target = cells[19][19];
+    var current = initial;
+    current.div.classList.add('startCell');
+    target.div.classList.add('endCell');
+    var previous = null;
+    var stack = [];
+    var trail = [];
+    var interval = setInterval(() => {
+        if(current != target){
+            if(current.markCount === 0){
+                current.markCount++;
+                if(current.markCount === 1 && !trail.includes(current)){
+                    trail.push(current);
+                    if(current != initial){
+                        current.div.classList.add('trail');
+                    }
+                }
+            }
+            var chosen = getPossiblePaths(current,previous).randomMinMark();
+            if(chosen){
+                stack.push(current);
+                stack.push(previous);
+                previous = current;
+                current = chosen;
+            }
+            else{
+                current.deadEnd = true;
+                current.div.classList.remove('trail');
+                // current.div.classList.add('dead');
+                trail.pop();
+                if(stack.length >0){
+                    previous = stack.pop();
+                    current = stack.pop();
+                }
+            }
+        }else{
+            clearInterval(interval);
+            console.log('Solved!');
+            var audio = new Audio('tada.mp3');
+            audio.play();
+            document.getElementById('applause').classList.remove('none');
+        }
+    }, 10);
 }
